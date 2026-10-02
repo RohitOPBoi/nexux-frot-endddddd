@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Nexus3DLogo } from "./Nexus3DLogo";
-import { ArrowRight, Moon, Sun, Shield, Terminal } from "lucide-react";
+import { ArrowRight, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 
 export function LandingSections() {
@@ -33,7 +33,7 @@ export function LandingSections() {
             NEXUS
           </span>
           <span className="text-[11px] font-mono text-muted hidden sm:inline">
-            // AARVAK SPRINT COHORT
+            {/* AARVAK SPRINT COHORT */}
           </span>
         </div>
 

@@ -19,10 +19,12 @@ export function RunnerGameCanvas({
   
   // Keep live references to props so the game loop never tears down on keystrokes
   const stateRef = useRef(gameState);
-  stateRef.current = gameState;
-
   const onSuccessRef = useRef(onSuccessComplete);
-  onSuccessRef.current = onSuccessComplete;
+
+  useEffect(() => {
+    stateRef.current = gameState;
+    onSuccessRef.current = onSuccessComplete;
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current;

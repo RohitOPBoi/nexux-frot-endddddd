@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { CANONICAL_ACTIVITIES, AchievementSubmission } from "@/lib/competition-data";
-import { UploadCloud, CheckCircle, AlertCircle, FileText, ArrowRight } from "lucide-react";
+import { UploadCloud, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
 
 interface SubmitAchievementProps {
   currentUser: {
@@ -12,10 +12,14 @@ interface SubmitAchievementProps {
     avatarUrl: string;
   };
   onSubmitSuccess: (newSubmission: AchievementSubmission) => void;
+  /** Optional: live activities from Supabase activity_catalog. Falls back to CANONICAL_ACTIVITIES. */
+  activities?: { id: string; title: string; category: string; points: number }[];
 }
 
-export function SubmitAchievement({ currentUser, onSubmitSuccess }: SubmitAchievementProps) {
-  const [activityId, setActivityId] = useState(CANONICAL_ACTIVITIES[0].id);
+export function SubmitAchievement({ currentUser, onSubmitSuccess, activities }: SubmitAchievementProps) {
+  // Use live activities from Supabase if provided, otherwise fallback to hardcoded list
+  const activityList = activities && activities.length > 0 ? activities : CANONICAL_ACTIVITIES;
+  const [activityId, setActivityId] = useState(activityList[0].id);
   const [details, setDetails] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -50,7 +54,7 @@ export function SubmitAchievement({ currentUser, onSubmitSuccess }: SubmitAchiev
     setIsSubmitting(true);
     setErrorMessage("");
 
-    const matchedActivity = CANONICAL_ACTIVITIES.find((a) => a.id === activityId)!;
+    const matchedActivity = activityList.find((a) => a.id === activityId)!;
 
     // Simulate Server Action call matching app/actions/achievements.ts
     setTimeout(() => {
@@ -62,7 +66,7 @@ export function SubmitAchievement({ currentUser, onSubmitSuccess }: SubmitAchiev
         achievedOn: new Date().toISOString().split("T")[0],
         details: details.trim(),
         proofUrl: previewUrl || "/logo/official_jewel.png",
-        status: "PENDING",
+        status: "DONE",
         activityTitle: matchedActivity.title,
         points: matchedActivity.points,
         submittedAt: "Just now",
@@ -108,7 +112,7 @@ export function SubmitAchievement({ currentUser, onSubmitSuccess }: SubmitAchiev
               Milestone Submitted Successfully
             </h4>
             <p className="text-xs font-mono text-muted max-w-md mx-auto">
-              Your achievement record has been persisted locally in PostgreSQL and queued in `PENDING` state for Core verification.
+              Your achievement record has been persisted locally in PostgreSQL and queued in `DONE` state for Core verification.
             </p>
             <button
               onClick={() => setSuccessMessage(false)}
@@ -136,7 +140,7 @@ export function SubmitAchievement({ currentUser, onSubmitSuccess }: SubmitAchiev
                 onChange={(e) => setActivityId(e.target.value)}
                 className="w-full px-3 py-2.5 bg-paper border border-hairline rounded-sm text-sm text-ink font-mono focus:outline-none focus:border-ink transition-colors"
               >
-                {CANONICAL_ACTIVITIES.map((act) => (
+                {activityList.map((act) => (
                   <option key={act.id} value={act.id}>
                     {act.title} (+{act.points} PTS) — [{act.category}]
                   </option>
@@ -194,7 +198,7 @@ export function SubmitAchievement({ currentUser, onSubmitSuccess }: SubmitAchiev
             {/* Submit Button */}
             <div className="pt-3 border-t border-hairline flex items-center justify-between">
               <span className="text-[11px] font-mono text-muted">
-                Status on submission: <span className="text-amber-500 font-bold">PENDING</span>
+                Status on submission: <span className="text-amber-500 font-bold">DONE</span>
               </span>
               <button
                 type="submit"

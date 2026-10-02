@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 type Theme = "light" | "dark";
 
@@ -13,24 +13,22 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
-
-  useEffect(() => {
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "dark";
     try {
       const savedTheme = localStorage.getItem("nexus-theme") as Theme | null;
       if (savedTheme === "light" || savedTheme === "dark") {
-        setThemeState(savedTheme);
         document.documentElement.classList.toggle("dark", savedTheme === "dark");
-      } else {
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        const initial = prefersDark ? "dark" : "light";
-        setThemeState(initial);
-        document.documentElement.classList.toggle("dark", initial === "dark");
+        return savedTheme;
       }
-    } catch (e) {
-      console.error(e);
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const initial = prefersDark ? "dark" : "light";
+      document.documentElement.classList.toggle("dark", initial === "dark");
+      return initial;
+    } catch {
+      return "dark";
     }
-  }, []);
+  });
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);

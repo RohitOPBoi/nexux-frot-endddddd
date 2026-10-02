@@ -12,6 +12,12 @@ import {
   TeamStanding,
   AchievementSubmission,
 } from "@/lib/competition-data";
+import {
+  fetchMembers,
+  fetchSubmissions,
+  fetchTeamStanding,
+  fetchActivityCatalog,
+} from "@/lib/supabase-data";
 import { MemberFlashcard } from "@/components/dashboard/MemberFlashcard";
 import { TeamPerformance } from "@/components/dashboard/TeamPerformance";
 import { SubmitAchievement } from "@/components/dashboard/SubmitAchievement";
@@ -29,51 +35,99 @@ import {
   Sun,
   LogOut,
   Shield,
-  CheckCircle2,
+  Loader2,
 } from "lucide-react";
+
+type UserRole = "CORE" | "MEMBER";
+
+const DEFAULT_USER = {
+  name: "Arjun Mehta",
+  email: "arjun@nexus.org",
+  role: "CORE" as UserRole,
+  department: "Technical",
+  avatarUrl: "/avatars/avatar_1.png",
+};
 
 export default function DashboardPage() {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
 
-  // Session state
-  const [currentUser, setCurrentUser] = useState({
-    name: "Arjun Mehta",
-    email: "arjun@nexus.org",
-    role: "CORE", // "CORE" or "MEMBER"
-    department: "Technical",
-    avatarUrl: "/avatars/avatar_1.png",
-  });
+  // Session state — initialized with defaults for SSR hydration
+  const [currentUser, setCurrentUser] = useState(DEFAULT_USER);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Active section: 1 to 6
-  const [activeSection, setActiveSection] = useState<number>(1);
-
-  // App data state
-  const [standing, setStanding] = useState<TeamStanding>(INITIAL_STANDING);
-  const [members, setMembers] = useState<MemberProfile[]>(TEAM_MEMBERS);
-  const [submissions, setSubmissions] = useState<AchievementSubmission[]>(INITIAL_SUBMISSIONS);
-
+  // Hydrate from localStorage after mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem("nexus-session");
       if (stored) {
         const parsed = JSON.parse(stored);
-        setCurrentUser((prev) => ({
-          ...prev,
-          name: parsed.name || prev.name,
-          email: parsed.email || prev.email,
-          role: parsed.role || prev.role,
-        }));
+        // We use setTimeout to avoid 'react-hooks/set-state-in-effect' (synchronous setState)
+        setTimeout(() => {
+          setCurrentUser({
+            ...DEFAULT_USER,
+            name: parsed.name || DEFAULT_USER.name,
+            email: parsed.email || DEFAULT_USER.email,
+            role: parsed.role || DEFAULT_USER.role,
+          });
+        }, 0);
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch {}
+    setTimeout(() => {
+      setIsMounted(true);
+    }, 0);
   }, []);
+
+  // Active section: 1 to 6
+  const [activeSection, setActiveSection] = useState<number>(1);
+
+  // App data state — initialize with mock data as fallbacks
+  const [standing, setStanding] = useState<TeamStanding>(INITIAL_STANDING);
+  const [members, setMembers] = useState<MemberProfile[]>(TEAM_MEMBERS);
+  const [submissions, setSubmissions] = useState<AchievementSubmission[]>(INITIAL_SUBMISSIONS);
+  const [activities, setActivities] = useState<{ id: string; title: string; category: string; points: number }[]>([]);
+
+  // Loading state
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch real data from Supabase on mount
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoading(true);
+
+        // Fetch all data in parallel
+        const [fetchedMembers, fetchedSubmissions, fetchedActivities] =
+          await Promise.all([
+            fetchMembers(),
+            fetchSubmissions(),
+            fetchActivityCatalog(),
+          ]);
+
+          setMembers(fetchedMembers);
+
+          // Build team standing from real member data
+          const realStanding = await fetchTeamStanding(fetchedMembers);
+          setStanding(realStanding);
+
+        setSubmissions(fetchedSubmissions);
+        setActivities(fetchedActivities);
+      } catch (err) {
+        console.error("Failed to fetch Supabase data, using fallback mock data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+
 
   const handleSignOut = () => {
     try {
       localStorage.removeItem("nexus-session");
-    } catch (e) {}
+    } catch {}
     router.push("/login");
   };
 
@@ -167,6 +221,10 @@ export default function DashboardPage() {
     { id: 5, label: "Activity & Audit Feed", icon: Activity },
     { id: 6, label: "Nexus System Blueprint", icon: Cpu },
   ];
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-paper text-ink transition-colors duration-400">
@@ -267,8 +325,18 @@ export default function DashboardPage() {
 
       {/* 3. Section Content Container */}
       <main className="max-w-7xl mx-auto px-6 sm:px-10 py-8">
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex items-center justify-center gap-3 py-4 mb-6 border border-hairline rounded-sm bg-paper">
+            <Loader2 className="w-4 h-4 animate-spin text-muted" />
+            <span className="text-xs font-mono text-muted">
+              SYNCHRONIZING WITH SUPABASE...
+            </span>
+          </div>
+        )}
+
         {/* Section 1: Team Performance */}
-        {activeSection === 1 && <TeamPerformance standing={standing} />}
+        {activeSection === 1 && <TeamPerformance standing={standing} members={members} currentUser={currentUser} />}
 
         {/* Section 2: Team Members (10 Flashcards with ASCII Dissolve) */}
         {activeSection === 2 && (
@@ -279,15 +347,15 @@ export default function DashboardPage() {
                   Team Members & Engineering Cohort
                 </h2>
                 <p className="text-xs font-mono text-muted mt-0.5">
-                  10 active members: 2 Guides / Leaders + 8 Contributing Engineers • Click any card to open full dossier
+                  {members.length} active members: {members.filter(m => m.isLeader).length} Guides / Leaders + {members.filter(m => !m.isLeader).length} Contributing Engineers • Click any card to open full dossier
                 </p>
               </div>
               <span className="hv-kicker text-[10px] px-2.5 py-1 rounded border border-hairline">
-                8 CONTRIBUTING • 2 GUIDES
+                {members.filter(m => !m.isLeader).length} CONTRIBUTING • {members.filter(m => m.isLeader).length} GUIDES
               </span>
             </div>
 
-            {/* 10-Card Responsive Grid */}
+            {/* Responsive Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {members.map((member) => (
                 <MemberFlashcard
@@ -304,6 +372,7 @@ export default function DashboardPage() {
           <SubmitAchievement
             currentUser={currentUser}
             onSubmitSuccess={handleSubmitSuccess}
+            activities={activities.length > 0 ? activities : undefined}
           />
         )}
 

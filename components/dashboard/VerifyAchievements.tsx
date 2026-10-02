@@ -18,10 +18,10 @@ export function VerifyAchievements({
 }: VerifyAchievementsProps) {
   const [rejectModalId, setRejectModalId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [activeTab, setActiveTab] = useState<"PENDING" | "ALL">("PENDING");
+  const [activeTab, setActiveTab] = useState<"DONE" | "ALL">("DONE");
 
-  const pendingSubmissions = submissions.filter((s) => s.status === "PENDING");
-  const displayList = activeTab === "PENDING" ? pendingSubmissions : submissions;
+  const doneSubmissions = submissions.filter((s) => s.status === "DONE");
+  const displayList = activeTab === "DONE" ? doneSubmissions : submissions;
 
   const handleConfirmReject = () => {
     if (!rejectModalId || rejectionReason.trim().length < 8) return;
@@ -49,12 +49,12 @@ export function VerifyAchievements({
         {/* Filter Toggle */}
         <div className="flex items-center gap-1 p-1 border border-hairline rounded bg-ink/5 text-xs font-mono">
           <button
-            onClick={() => setActiveTab("PENDING")}
+            onClick={() => setActiveTab("DONE")}
             className={`px-3 py-1 rounded transition-colors ${
-              activeTab === "PENDING" ? "bg-ink text-onink font-bold" : "text-muted hover:text-ink"
+              activeTab === "DONE" ? "bg-ink text-onink font-bold" : "text-muted hover:text-ink"
             }`}
           >
-            PENDING ({pendingSubmissions.length})
+            DONE ({doneSubmissions.length})
           </button>
           <button
             onClick={() => setActiveTab("ALL")}
@@ -70,7 +70,7 @@ export function VerifyAchievements({
       {/* Submissions List */}
       {displayList.length === 0 ? (
         <div className="p-12 text-center border border-hairline rounded-sm bg-paper space-y-2">
-          <p className="text-sm font-bold text-ink">Zero Pending Verifications</p>
+          <p className="text-sm font-bold text-ink">Zero DONE Verifications</p>
           <p className="text-xs font-mono text-muted">
             All team sprint submissions have been audited and scored upstream.
           </p>
@@ -87,7 +87,7 @@ export function VerifyAchievements({
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={`font-mono text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
-                      item.status === "PENDING"
+                      item.status === "DONE"
                         ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
                         : item.status === "VERIFIED"
                         ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
@@ -144,8 +144,8 @@ export function VerifyAchievements({
                   <ExternalLink className="w-3 h-3" />
                 </a>
 
-                {/* Approve / Reject Actions (Only for PENDING items) */}
-                {item.status === "PENDING" && (
+                {/* Approve / Reject Actions (Only for DONE items) */}
+                {item.status === "DONE" && (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setRejectModalId(item.id)}
@@ -178,7 +178,7 @@ export function VerifyAchievements({
               <span>Provide Audit Rejection Reason</span>
             </div>
             <p className="text-xs text-muted font-mono">
-              Minimum 8 characters. This feedback will be attached to the member's audit record.
+              Minimum 8 characters. This feedback will be attached to the member&apos;s audit record.
             </p>
             <textarea
               value={rejectionReason}

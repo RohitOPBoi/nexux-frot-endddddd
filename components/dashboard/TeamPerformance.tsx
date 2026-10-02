@@ -3,13 +3,22 @@
 import React from "react";
 import Image from "next/image";
 import { TeamStanding } from "@/lib/competition-data";
-import { Trophy, TrendingUp, Target, Layers, ArrowUpRight } from "lucide-react";
+import { Trophy, TrendingUp, Target, Layers } from "lucide-react";
+
+import { MemberProfile } from "@/lib/members-data";
 
 interface TeamPerformanceProps {
   standing: TeamStanding;
+  members: MemberProfile[];
+  currentUser: { name: string; role: string };
 }
 
-export function TeamPerformance({ standing }: TeamPerformanceProps) {
+export function TeamPerformance({ standing, members, currentUser }: TeamPerformanceProps) {
+  const userProfile = members.find(m => m.name.toLowerCase() === currentUser.name.toLowerCase());
+  const isLeader = userProfile?.isLeader;
+  const memberRank = userProfile?.rank || (isLeader ? "LEAD" : "-");
+  const totalMembers = members.filter(m => !m.isLeader).length;
+
   return (
     <div className="space-y-6">
       {/* Top Metric Cards Grid */}
@@ -17,18 +26,18 @@ export function TeamPerformance({ standing }: TeamPerformanceProps) {
         {/* 1. Standing */}
         <div className="p-5 border border-hairline rounded-sm bg-paper flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="hv-kicker text-[10px]">COMPETITION RANK</span>
+            <span className="hv-kicker text-[10px]">YOUR SPRINT RANK</span>
             <Trophy className="w-4 h-4 text-amber-500" />
           </div>
           <div className="my-3">
             <div className="text-3xl font-bold font-mono text-ink tracking-tight flex items-baseline gap-1">
-              #{standing.rank}
+              {memberRank !== "LEAD" ? `#${memberRank}` : "LEAD"}
               <span className="text-xs text-muted font-normal">
-                / {standing.totalTeams} TEAMS
+                / {totalMembers} MEMBERS
               </span>
             </div>
             <p className="text-xs text-emerald-600 dark:text-emerald-400 font-mono mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />+{standing.weeklyGrowth}% THIS SPRINT
+              <TrendingUp className="w-3 h-3" />Personal Growth
             </p>
           </div>
           <div className="pt-2 border-t border-hairline text-[11px] text-muted font-mono">

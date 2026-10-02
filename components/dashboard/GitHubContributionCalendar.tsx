@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Github, Calendar, Flame, TrendingUp, GitCommit, GitPullRequest, GitMerge } from "lucide-react";
+import { Github, Flame } from "lucide-react";
 import { MemberProfile } from "@/lib/members-data";
 
 interface GitHubContributionCalendarProps {
@@ -26,21 +26,33 @@ export function GitHubContributionCalendar({
   const [hoveredDay, setHoveredDay] = useState<DayData | null>(null);
   const [themeMode, setThemeMode] = useState<"emerald" | "mono">("emerald");
 
-  // Generate realistic 32-week (approx 7.5 months) daily contribution data
+  // Generate dynamic daily contribution data based on the user's earliest achievement
   const { weeks, monthLabels, totalContributions, maxStreak, currentStreak } = useMemo(() => {
-    const today = new Date("2026-09-22T12:00:00Z");
-    const numWeeks = 32;
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    
+    const firstContributionDate = (member.achievements && member.achievements.length > 0)
+      ? new Date(Math.min(...member.achievements.map(a => new Date(a.date).getTime())))
+      : today;
+      
+    // Calculate total days between first contribution and today
+    const msPerDay = 1000 * 60 * 60 * 24;
+    let requiredDays = Math.floor((today.getTime() - firstContributionDate.getTime()) / msPerDay) + 1;
+    
+    // Enforce a minimum of 32 weeks (about 8 months) for a full-looking grid if they are new
+    if (requiredDays < 32 * 7) requiredDays = 32 * 7;
+    
+    const numWeeks = Math.ceil(requiredDays / 7);
     const totalDays = numWeeks * 7;
 
-    // Seeded pseudo-random generator based on member id
-    let seed = 0;
-    for (let i = 0; i < member.id.length; i++) {
-      seed += member.id.charCodeAt(i);
+    // Calculate daily contribution counts from member achievements
+    const dateCounts: Record<string, number> = {};
+    if (member.achievements) {
+      member.achievements.forEach((ach) => {
+        const dateKey = ach.date; // assuming YYYY-MM-DD
+        dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
+      });
     }
-    const pseudoRandom = (offset: number) => {
-      const x = Math.sin(seed + offset) * 10000;
-      return x - Math.floor(x);
-    };
 
     const days: DayData[] = [];
     let runningTotal = 0;
@@ -73,40 +85,14 @@ export function GitHubContributionCalendar({
         lastMonth = mIdx;
       }
 
-      // Generate realistic activity count
-      // Weekends have lower probability, weekdays have higher
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const r = pseudoRandom(i * 13 + (member.streakDays || 10));
-
-      let count = 0;
+      const dateStr = d.toISOString().split("T")[0];
+      const count = dateCounts[dateStr] || 0;
+      
       let level = 0;
-
-      if (!isWeekend && r > 0.28) {
-        if (r > 0.85) {
-          count = Math.floor(8 + r * 7); // 8-15 commits (level 4)
-          level = 4;
-        } else if (r > 0.65) {
-          count = Math.floor(5 + r * 4); // 5-7 commits (level 3)
-          level = 3;
-        } else if (r > 0.45) {
-          count = Math.floor(3 + r * 3); // 3-4 commits (level 2)
-          level = 2;
-        } else {
-          count = Math.floor(1 + r * 2); // 1-2 commits (level 1)
-          level = 1;
-        }
-      } else if (isWeekend && r > 0.68) {
-        count = Math.floor(1 + r * 4);
-        level = count > 3 ? 2 : 1;
-      }
-
-      // If within recent active streak
-      if (i > totalDays - (member.streakDays || 12)) {
-        if (count === 0) {
-          count = 3;
-          level = 2;
-        }
-      }
+      if (count >= 4) level = 4;
+      else if (count === 3) level = 3;
+      else if (count === 2) level = 2;
+      else if (count === 1) level = 1;
 
       runningTotal += count;
 
@@ -117,13 +103,13 @@ export function GitHubContributionCalendar({
         tempStreak = 0;
       }
 
-      // Current streak at end
-      if (i >= totalDays - 20) {
-        if (count > 0) curStreak++;
-        else curStreak = 0;
+      // Current streak at end (check if recent days have streak)
+      if (i === totalDays - 2) { // Yesterday
+        curStreak = tempStreak;
+      } else if (i === totalDays - 1) { // Today
+        if (count > 0) curStreak = tempStreak;
       }
 
-      const dateStr = d.toISOString().split("T")[0];
       days.push({
         date: dateStr,
         count,
@@ -135,7 +121,7 @@ export function GitHubContributionCalendar({
       });
     }
 
-    // Group into 32 columns of 7 days
+    // Group into columns of 7 days
     const groupedWeeks: DayData[][] = [];
     for (let w = 0; w < numWeeks; w++) {
       groupedWeeks.push(days.slice(w * 7, (w + 1) * 7));
@@ -145,8 +131,8 @@ export function GitHubContributionCalendar({
       weeks: groupedWeeks,
       monthLabels: monthTracker,
       totalContributions: runningTotal,
-      maxStreak: Math.max(longestStreak, member.streakDays),
-      currentStreak: member.streakDays,
+      maxStreak: longestStreak,
+      currentStreak: curStreak,
     };
   }, [member]);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Server, Database, Cloud, Shield, Code, Cpu, ExternalLink } from "lucide-react";
+import { Server, Database, Cloud, Shield } from "lucide-react";
 
 export function SystemBlueprint() {
   const [selectedNode, setSelectedNode] = useState<string>("rpc");
@@ -10,7 +10,7 @@ export function SystemBlueprint() {
     localDb: {
       title: "Local Team Tier (PostgreSQL + Prisma 7.10)",
       badge: "High-Frequency Ingestion",
-      desc: "Handles member submissions, local PENDING states, audit logs, and weekly bucket telemetry with zero central latency. Uses @prisma/adapter-pg for serverless connection pooling.",
+      desc: "Handles member submissions, local DONE states, audit logs, and weekly bucket telemetry with zero central latency. Uses @prisma/adapter-pg for serverless connection pooling.",
       details: [
         "Model: Achievement (id: cuid, status: AchievementStatus, proofUrl: String)",
         "Model: User (id: String, role: String, department: String)",
