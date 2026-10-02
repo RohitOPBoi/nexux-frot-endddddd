@@ -11,7 +11,12 @@ interface Nexus3DLogoProps {
 export function Nexus3DLogo({ scrollProgress, onHoverStateChange }: Nexus3DLogoProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isTouchDevice] = useState(() => {
+    if (typeof window !== "undefined") {
+      return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    }
+    return false;
+  });
 
   // References for Three.js objects
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -33,9 +38,7 @@ export function Nexus3DLogo({ scrollProgress, onHoverStateChange }: Nexus3DLogoP
     scrollProgressRef.current = scrollProgress;
   }, [scrollProgress]);
 
-  useEffect(() => {
-    setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
-  }, []);
+
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -431,7 +434,7 @@ export function Nexus3DLogo({ scrollProgress, onHoverStateChange }: Nexus3DLogoP
       monoTex.dispose();
       colorTex.dispose();
     };
-  }, [isTouchDevice]);
+  }, [isTouchDevice, onHoverStateChange]);
 
   return (
     <div className="relative w-full h-full pointer-events-none">

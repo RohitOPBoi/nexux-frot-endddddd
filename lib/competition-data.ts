@@ -31,7 +31,7 @@ export interface AchievementSubmission {
   achievedOn: string;
   details: string;
   proofUrl: string;
-  status: "PENDING" | "VERIFIED" | "REJECTED";
+  status: "DONE" | "VERIFIED" | "REJECTED";
   activityTitle: string;
   points: number;
   submittedAt: string;
@@ -90,36 +90,42 @@ export const INITIAL_STANDING: TeamStanding = {
   ],
 };
 
-// Official Canonical 27 Activities from BACKEND.md
+// Official Canonical Activities based on TSJ point system.pdf
 export const CANONICAL_ACTIVITIES = [
-  { id: "act-1", title: "Open Source PR Merged", category: "Individual", points: 60 },
-  { id: "act-2", title: "Open Source PR Raised", category: "Individual", points: 25 },
-  { id: "act-3", title: "Technical Architecture Sign-off", category: "Team Activity", points: 100 },
-  { id: "act-4", title: "3D WebGL / Shader Feature Implementation", category: "Individual", points: 80 },
-  { id: "act-5", title: "Weekly Challenge Submission", category: "Sprint Track", points: 50 },
-  { id: "act-6", title: "DSA Monthly Streak (30/30)", category: "Individual", points: 80 },
-  { id: "act-7", title: "DSA Weekly Streak (7/7)", category: "Individual", points: 35 },
-  { id: "act-8", title: "Technical Blog Publication", category: "Individual", points: 50 },
-  { id: "act-9", title: "Tech Talk / Engineering Demo", category: "Individual", points: 40 },
-  { id: "act-10", title: "Hackathon 1st Place", category: "Bonus", points: 50 },
-  { id: "act-11", title: "Hackathon 2nd Place", category: "Bonus", points: 35 },
-  { id: "act-12", title: "Hackathon 3rd Place", category: "Bonus", points: 20 },
-  { id: "act-13", title: "Sprint Track Winner", category: "Sprint Track", points: 30 },
-  { id: "act-14", title: "Sprint Track Runner-up", category: "Sprint Track", points: 15 },
-  { id: "act-15", title: "Sprint Track Participation", category: "Sprint Track", points: 8 },
-  { id: "act-16", title: "Full Track Streak Completed", category: "Sprint Track", points: 25 },
-  { id: "act-17", title: "Meetup Attendance & Knowledge Sharing", category: "Team Activity", points: 10 },
-  { id: "act-18", title: "Major Project Milestone Shipped", category: "Team Activity", points: 150 },
-  { id: "act-19", title: "Research Paper / RFC Authored", category: "Individual", points: 100 },
-  { id: "act-20", title: "Design System Tokens Specification", category: "Individual", points: 70 },
-  { id: "act-21", title: "High-Fidelity Voxel / Sprite Catalog", category: "Individual", points: 90 },
-  { id: "act-22", title: "Database Migration & Index Tuning", category: "Individual", points: 65 },
-  { id: "act-23", title: "Telemetry & Metric Visualizer Pipeline", category: "Individual", points: 75 },
-  { id: "act-24", title: "Public Relations Outreach Campaign", category: "Individual", points: 45 },
-  { id: "act-25", title: "Community Sprint Event Organized", category: "Team Activity", points: 40 },
-  { id: "act-26", title: "Security Audit & Role Verification Spec", category: "Individual", points: 55 },
-  { id: "act-27", title: "Grand Sprint Showcase Milestone", category: "Team Activity", points: 250 },
+  // Team Scoreboard
+  { id: "act-1", title: "Bi-Weekly Meetup Attendance", category: "Team Activity", points: 5 },
+  { id: "act-2", title: "Weekly Challenge Winner", category: "Challenge", points: 30 },
+  { id: "act-3", title: "Weekly Challenge Runner-up", category: "Challenge", points: 15 },
+  { id: "act-4", title: "Weekly Challenge Participation", category: "Challenge", points: 5 },
+  { id: "act-5", title: "Society Project Basic", category: "Team Activity", points: 10 },
+  { id: "act-6", title: "Society Project Intermediate", category: "Team Activity", points: 20 },
+  { id: "act-7", title: "Society Project Advanced", category: "Team Activity", points: 30 },
+  { id: "act-8", title: "External Hackathon 1st Place", category: "Bonus", points: 50 },
+  { id: "act-9", title: "External Hackathon 2nd Place", category: "Bonus", points: 30 },
+  { id: "act-10", title: "External Hackathon 3rd Place", category: "Bonus", points: 20 },
+  { id: "act-11", title: "External Hackathon Participation", category: "Bonus", points: 10 },
+  { id: "act-12", title: "Open Source PR Raised", category: "Open Source", points: 10 },
+  { id: "act-13", title: "Open Source PR Merged in External Public Repository", category: "Open Source", points: 20 },
+  { id: "act-14", title: "Open Source PR Merged in Society Repository", category: "Open Source", points: 25 },
+  { id: "act-15", title: "Final / Major Project Winner", category: "Team Activity", points: 250 },
+  { id: "act-16", title: "Final / Major Project Runner-up", category: "Team Activity", points: 100 },
+  { id: "act-17", title: "Final / Major Project Other participating teams", category: "Team Activity", points: 50 },
+
+  // Individual Scoreboard / MVP
+  { id: "act-18", title: "7-day DSA streak", category: "Individual", points: 20 },
+  { id: "act-19", title: "Monthly DSA streak", category: "Individual", points: 100 },
+  { id: "act-20", title: "Research Paper Publication / Submission", category: "Individual", points: 50 },
+  { id: "act-21", title: "Tech Talk Delivery", category: "Individual", points: 15 },
+  { id: "act-22", title: "Blog / Article Publication", category: "Individual", points: 10 },
+  { id: "act-23", title: "External Event Participation", category: "Individual", points: 10 },
+
+  // Sprint Tracks
+  { id: "act-24", title: "Sprint Track Winner", category: "Sprint Track", points: 25 },
+  { id: "act-25", title: "Sprint Track Runner-up", category: "Sprint Track", points: 15 },
+  { id: "act-26", title: "Sprint Track Participation", category: "Sprint Track", points: 8 },
+  { id: "act-27", title: "Full Track Streak (one-time bonus)", category: "Sprint Track", points: 30 },
 ];
+
 
 export const INITIAL_SUBMISSIONS: AchievementSubmission[] = [
   {
@@ -130,7 +136,7 @@ export const INITIAL_SUBMISSIONS: AchievementSubmission[] = [
     achievedOn: "2026-09-22",
     details: "Merged upstream PR #142 into AARVAK core: optimized Three.js canvas draw calls by 42% on mobile.",
     proofUrl: "/logo/official_jewel.png",
-    status: "PENDING",
+    status: "DONE",
     activityTitle: "Open Source PR Merged",
     points: 60,
     submittedAt: "10 mins ago",
@@ -143,7 +149,7 @@ export const INITIAL_SUBMISSIONS: AchievementSubmission[] = [
     achievedOn: "2026-09-22",
     details: "Authored and shipped the 29-sprite handcrafted pixel iconography engine with integer crispEdges.",
     proofUrl: "/logo/monochrome_jewel.png",
-    status: "PENDING",
+    status: "DONE",
     activityTitle: "High-Fidelity Voxel / Sprite Catalog",
     points: 90,
     submittedAt: "45 mins ago",

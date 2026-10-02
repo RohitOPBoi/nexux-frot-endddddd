@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Sparkles, Eye, Code, Maximize2 } from "lucide-react";
+
 
 interface AsciiMorphismAvatarProps {
   avatarUrl: string;
@@ -11,7 +11,7 @@ interface AsciiMorphismAvatarProps {
 
 export function AsciiMorphismAvatar({
   avatarUrl,
-  name,
+
   className = "",
 }: AsciiMorphismAvatarProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);

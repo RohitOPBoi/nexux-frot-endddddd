@@ -2,7 +2,7 @@
 
 import React from "react";
 import { AchievementSubmission } from "@/lib/competition-data";
-import { CheckCircle, Clock, XCircle, ArrowUpRight, Terminal } from "lucide-react";
+import { Terminal } from "lucide-react";
 
 interface LiveActivityFeedProps {
   submissions: AchievementSubmission[];
@@ -38,7 +38,7 @@ export function LiveActivityFeed({ submissions }: LiveActivityFeedProps) {
                 className={`absolute -left-[31px] top-1 w-2.5 h-2.5 rounded-full border-2 border-paper transition-transform group-hover:scale-125 ${
                   item.status === "VERIFIED"
                     ? "bg-emerald-500 ring-2 ring-emerald-500/20"
-                    : item.status === "PENDING"
+                    : item.status === "DONE"
                     ? "bg-amber-500 ring-2 ring-amber-500/20 animate-pulse"
                     : "bg-red-500 ring-2 ring-red-500/20"
                 }`}
@@ -59,7 +59,7 @@ export function LiveActivityFeed({ submissions }: LiveActivityFeedProps) {
                     className={`font-mono text-[10px] px-1.5 py-0.2 rounded font-bold ${
                       item.status === "VERIFIED"
                         ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                        : item.status === "PENDING"
+                        : item.status === "DONE"
                         ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
                         : "bg-red-500/15 text-red-600 dark:text-red-400"
                     }`}

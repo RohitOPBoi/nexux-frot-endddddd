@@ -1,9 +1,10 @@
 "use client";
 
-import React, { use, useState } from "react";
+import React, { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import { TEAM_MEMBERS, MemberProfile } from "@/lib/members-data";
+import { MemberProfile } from "@/lib/members-data";
+import { fetchMembers } from "@/lib/supabase-data";
 import { AsciiMorphismAvatar } from "@/components/dashboard/AsciiMorphismAvatar";
 import { GitHubContributionCalendar } from "@/components/dashboard/GitHubContributionCalendar";
 import { useTheme } from "@/lib/theme";
@@ -22,8 +23,6 @@ import {
   Terminal,
   ExternalLink,
   Flame,
-  Star,
-  Layers,
   Cpu,
 } from "lucide-react";
 
@@ -36,21 +35,35 @@ export default function MemberProfilePage({
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
 
-  // Find the member
-  const memberIndex = TEAM_MEMBERS.findIndex((m) => m.id === resolvedParams.id);
-  if (memberIndex === -1) {
-    notFound();
-  }
-  const member = TEAM_MEMBERS[memberIndex];
+  const [membersList, setMembersList] = useState<MemberProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Previous & Next member navigation
-  const prevMember =
-    TEAM_MEMBERS[(memberIndex - 1 + TEAM_MEMBERS.length) % TEAM_MEMBERS.length];
-  const nextMember =
-    TEAM_MEMBERS[(memberIndex + 1) % TEAM_MEMBERS.length];
+  useEffect(() => {
+    fetchMembers().then((res) => {
+      setMembersList(res);
+      setIsLoading(false);
+    });
+  }, []);
 
   // Active filter for achievements
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-paper text-ink flex items-center justify-center font-mono text-sm tracking-widest">SYNCHRONIZING DOSSIER...</div>;
+  }
+
+  // Find the member
+  const memberIndex = membersList.findIndex((m) => m.id === resolvedParams.id);
+  if (memberIndex === -1) {
+    notFound();
+  }
+  const member = membersList[memberIndex];
+
+  // Previous & Next member navigation
+  const prevMember =
+    membersList[(memberIndex - 1 + membersList.length) % membersList.length];
+  const nextMember =
+    membersList[(memberIndex + 1) % membersList.length];
 
   const categories = ["ALL", ...Array.from(new Set(member.achievements.map((a) => a.category)))];
 
@@ -100,7 +113,7 @@ export default function MemberProfilePage({
               <span className="hidden md:inline">{prevMember.name.split(" ")[0]}</span>
             </button>
             <span className="px-2.5 py-1 text-[11px] text-ink font-bold bg-ink/[0.02]">
-              {memberIndex + 1} / {TEAM_MEMBERS.length}
+              {memberIndex + 1} / {membersList.length}
             </span>
             <button
               onClick={() => router.push(`/dashboard/members/${nextMember.id}`)}
@@ -180,13 +193,13 @@ export default function MemberProfilePage({
                 <div className="p-2 border border-hairline rounded bg-ink/[0.02]">
                   <span className="text-[10px] text-muted block uppercase">TASKS</span>
                   <span className="text-sm font-bold text-ink">
-                    {member.isLeader ? "12 Sprints" : `${member.completedTasks} Done`}
+                    {member.isLeader ? "12 Sprints" : `${member.achievements?.length || 0} Done`}
                   </span>
                 </div>
                 <div className="p-2 border border-hairline rounded bg-ink/[0.02]">
                   <span className="text-[10px] text-muted block uppercase">COMMITS</span>
                   <span className="text-sm font-bold text-ink">
-                    {member.githubContributions.totalThisMonth} / mo
+                    {member.achievements?.length || 0} Total
                   </span>
                 </div>
               </div>
@@ -236,7 +249,7 @@ export default function MemberProfilePage({
                   SECTION 01 // TELEMETRY ACTIVITY
                 </span>
                 <span className="text-[11px] font-mono text-muted">
-                  32 WEEKS • HOVER TO AUDIT
+                  FULL HISTORY • HOVER TO AUDIT
                 </span>
               </div>
 
@@ -265,11 +278,10 @@ export default function MemberProfilePage({
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat)}
-                      className={`px-2 py-0.5 rounded border transition-colors ${
-                        selectedCategory === cat
-                          ? "border-ink bg-ink text-onink font-bold"
-                          : "border-hairline text-muted hover:text-ink"
-                      }`}
+                      className={`px-2 py-0.5 rounded border transition-colors ${selectedCategory === cat
+                        ? "border-ink bg-ink text-onink font-bold"
+                        : "border-hairline text-muted hover:text-ink"
+                        }`}
                     >
                       {cat}
                     </button>
@@ -317,18 +329,42 @@ export default function MemberProfilePage({
               </div>
 
               {/* Sprint Progression Milestone Bar */}
-              <div className="p-4 rounded-sm border border-hairline bg-ink/[0.02] space-y-2">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="font-bold text-ink">SPRINT LEVEL 4 // COHORT SENIOR</span>
-                  <span className="text-muted">780 / 1,000 PTS TO LEVEL 5</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-hairline overflow-hidden">
-                  <div
-                    className="h-full bg-ink rounded-full transition-all duration-500"
-                    style={{ width: "78%" }}
-                  />
-                </div>
-              </div>
+              {(() => {
+                const pts = member.points ?? 0;
+                const levels = [
+                  { level: 1, label: "RECRUIT", min: 0, max: 50 },
+                  { level: 2, label: "CONTRIBUTOR", min: 50, max: 150 },
+                  { level: 3, label: "SPECIALIST", min: 150, max: 300 },
+                  { level: 4, label: "SENIOR", min: 300, max: 500 },
+                  { level: 5, label: "ELITE", min: 500, max: 800 },
+                  { level: 6, label: "LEGENDARY", min: 800, max: Infinity },
+                ];
+                const current = levels.find(l => pts >= l.min && pts < l.max) ?? levels[levels.length - 1];
+                const nextLevel = levels.find(l => l.level === current.level + 1);
+                const progressPct = nextLevel
+                  ? Math.min(100, Math.round(((pts - current.min) / (current.max - current.min)) * 100))
+                  : 100;
+                return (
+                  <div className="p-4 rounded-sm border border-hairline bg-ink/[0.02] space-y-2">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="font-bold text-ink">
+                        SPRINT LEVEL {current.level} {"//"} COHORT {current.label}
+                      </span>
+                      <span className="text-muted">
+                        {nextLevel
+                          ? `${pts} / ${current.max} PTS TO LEVEL ${nextLevel.level}`
+                          : `${pts} PTS — MAX LEVEL`}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-hairline overflow-hidden">
+                      <div
+                        className="h-full bg-ink rounded-full transition-all duration-500"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
             </section>
 
             {/* ------------------------------------------------------- */}
